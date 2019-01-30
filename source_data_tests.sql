@@ -1,49 +1,102 @@
 --TODO: use parameterized sql where it is possible
 --TODO: check old and new IDs changes: if they are changed when hierarchy changes
-------------------------------------------------
-------------------COMMON TESTS------------------
-------------------------------------------------
 
---Finding the not-unique IDs--
-SELECT us.id, us.name, count(us.id)
-FROM united_states_al2_al12_2018_01_03_v1 us
-GROUP BY us.id, us.name
-HAVING COUNT(us.id) >1;
+--COMMON CHECKS
+--Absence of not-unique IDs
+SELECT id, count(*)
+FROM united_states_al2_al12_2018_01_03_v1
+GROUP BY id
+HAVING COUNT(*) >1;
 
+SELECT id, count(*)
+FROM united_states_al2_al12_2018_01_09_v2
+GROUP BY id
+HAVING COUNT(*) >1;
 
---Finding concepts with broken hierarchy (ID is not the end of rpath)--
-SELECT us.id, us.name, us.rpath
-FROM united_states_al2_al12_2018_01_09_v2 us
-WHERE us.id != CAST((regexp_split_to_array(us.rpath, ','))[1] as INT);
+SELECT id, count(*)
+FROM france_al2_al12_2018_01_11_v1
+GROUP BY id
+HAVING COUNT(*) >1;
 
+--Finding records with broken hierarchy (ID is not the beginning of rpath)
+SELECT gid,
+       id,
+       country,
+       name,
+       enname,
+       locname,
+       offname,
+       boundary,
+       adminlevel,
+       wikidata,
+       wikimedia,
+       timestamp,
+       note,
+       rpath,
+       iso3166_2
+FROM united_states_al2_al12_2018_01_03_v1
+WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT;
 
---Finding the position of id in rpath if it is not the first--
-SELECT usn.id, usn.name, usn.rpath,
-CASE
-    when usn.id = CAST((regexp_split_to_array(usn.rpath, ','))[2] as INT) THEN '2'
-    when usn.id = CAST((regexp_split_to_array(usn.rpath, ','))[3] as INT) THEN '3'
-    when usn.id = CAST((regexp_split_to_array(usn.rpath, ','))[4] as INT) THEN '4'
+--Finding the position of id in rpath in records with broken hierarchy
+SELECT gid,
+       id,
+       country,
+       name,
+       enname,
+       locname,
+       offname,
+       boundary,
+       adminlevel,
+       wikidata,
+       wikimedia,
+       timestamp,
+       note,
+       rpath,
+       iso3166_2,
+    CASE
+    when id = (regexp_split_to_array(rpath, ','))[2] :: INT THEN '2'
+    when id = (regexp_split_to_array(rpath, ','))[3] :: INT THEN '3'
+    when id = (regexp_split_to_array(rpath, ','))[4] :: INT THEN '4'
+    ELSE '0'
     end as place_of_its_own_id
-FROM united_states_al2_al12_2018_01_09_v2 usn
-WHERE usn.id != CAST((regexp_split_to_array(usn.rpath, ','))[1] as INT)
+FROM united_states_al2_al12_2018_01_03_v1
+WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
 ORDER BY place_of_its_own_id;
 
+--Lower or the same admin level cannot be the parent of higher admin level
+--(EXCLUDING BROKEN HIERARCHY)
+SELECT t.gid,
+       t.id,
+       t.country,
+       t.name,
+       t.enname,
+       t.locname,
+       t.offname,
+       t.boundary,
+       t.adminlevel,
+       t.wikidata,
+       t.wikimedia,
+       t.timestamp,
+       t.note,
+       t.rpath,
+       t.iso3166_2
+FROM united_states_al2_al12_2018_01_03_v1 t
+JOIN united_states_al2_al12_2018_01_03_v1 t1
+    ON (regexp_split_to_array(t.rpath, ','))[1] :: INT = t1.id
+JOIN united_states_al2_al12_2018_01_03_v1 t2
+    ON (regexp_split_to_array(t.rpath, ','))[2] :: INT = t2.id
 
---Lower or the same admin level cannot be the parent of higher admin level--
---(EXCLUDED BROKEN HIERARCHY)--
-SELECT us.id, us.name, us.adminlevel, bh.closest_ancestor, us2.name, us2.adminlevel
-FROM france_al2_al12_2018_01_11_v1 us
-JOIN bound_hierarchy bh on bh.concept_code = us.id
-JOIN france_al2_al12_2018_01_11_v1 us2 ON bh.closest_ancestor = us2.id
-WHERE (us.adminlevel < us2.adminlevel OR us.adminlevel = us2.adminlevel)
-AND us.id NOT IN (
-    SELECT us3.id
-FROM france_al2_al12_2018_01_11_v1 us3
-WHERE us3.id != CAST((regexp_split_to_array(us3.rpath, ','))[1] as INT)
-    );
+WHERE (t1.adminlevel = t2.adminlevel OR t1.adminlevel < t2.adminlevel)
 
+  AND t.id not in (
 
---Finding Doppelgangers with same rpath--
+    SELECT id
+    FROM united_states_al2_al12_2018_01_03_v1
+    WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
+    )
+;
+
+--Finding counterparts with same rpath--
 select id, name, adminlevel, rpath from france_al2_al12_2018_01_11_v1
 where rpath in (
 select rpath
@@ -56,8 +109,8 @@ order by rpath;
 --TESTS for different versions of one country--
 -----------------------------------------------
 
---not existing rows in each table--
---current version: old USA vs new USA--
+--not existing rows in each table
+--current version: old USA vs new USA
 SELECT us.id as old_id,
        usn.id as new_id,
        CASE
@@ -73,8 +126,8 @@ from united_states_al2_al12_2018_01_03_v1 us full outer join united_states_al2_a
 where us.id IS NULL OR usn.id IS NULL;
 
 
---Finding concepts with name and hierarchy changes--
---Name changed--
+--Finding concepts with name and hierarchy changes
+--Name changed
 SELECT us.id as id, 'Name changed' as changes, us.name as old_name, usn.name as new_name,
        us.rpath as old_rpath, usn.rpath as new_rpath
 FROM united_states_al2_al12_2018_01_03_v1 us

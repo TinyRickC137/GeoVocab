@@ -1,4 +1,4 @@
---Creating source tables--
+--Creating source tables
 DROP TABLE IF EXISTS united_states_al2_al12_2018_01_03_v1;
 CREATE TABLE united_states_al2_al12_2018_01_03_v1
 (
@@ -17,7 +17,7 @@ CREATE TABLE united_states_al2_al12_2018_01_03_v1
     note       varchar(254),
     rpath      varchar(254),
     iso3166_2  varchar(254),
-    geom       varchar
+    geom       varchar --Should be geometry(MultiPolygon,4326) instead.
 );
 
 
@@ -39,7 +39,7 @@ CREATE TABLE united_states_al2_al12_2018_01_09_v2
     note       varchar(254),
     rpath      varchar(254),
     iso3166_2  varchar(254),
-    geom       varchar
+    geom       varchar --Should be geometry(MultiPolygon,4326) instead.
 );
 
 
@@ -61,5 +61,5 @@ CREATE TABLE france_al2_al12_2018_01_11_v1
     note       varchar(254),
     rpath      varchar(254),
     iso3166_2  varchar(254),
-    geom       varchar
+    geom       varchar --Should be geometry(MultiPolygon,4326) instead.
 );
