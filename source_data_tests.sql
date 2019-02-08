@@ -1,22 +1,28 @@
---TODO: use parameterized sql where it is possible
 --TODO: check old and new IDs changes: if they are changed when hierarchy changes
 
 --COMMON CHECKS
+--Count of records
+SELECT COUNT (*)
+FROM osm_all_countries;
+
 --Absence of not-unique IDs
 SELECT id, count(*)
-FROM united_states_al2_al12_2018_01_03_v1
+FROM osm_all_countries
 GROUP BY id
-HAVING COUNT(*) >1;
+HAVING COUNT(*) > 1;
 
-SELECT id, count(*)
-FROM united_states_al2_al12_2018_01_09_v2
-GROUP BY id
-HAVING COUNT(*) >1;
+--Counts of records by Country
+SELECT country, COUNT (*)
+FROM osm_all_countries
+GROUP BY country;
 
-SELECT id, count(*)
-FROM france_al2_al12_2018_01_11_v1
-GROUP BY id
-HAVING COUNT(*) >1;
+
+--Adminlevels distribution
+SELECT adminlevel, COUNT (*)
+FROM osm_all_countries
+GROUP BY adminlevel
+ORDER BY adminlevel;
+
 
 --Finding records with broken hierarchy (ID is not the beginning of rpath)
 SELECT gid,
@@ -34,7 +40,7 @@ SELECT gid,
        note,
        rpath,
        iso3166_2
-FROM united_states_al2_al12_2018_01_03_v1
+FROM osm_all_countries
 WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT;
 
 --Finding the position of id in rpath in records with broken hierarchy
@@ -57,9 +63,20 @@ SELECT gid,
     when id = (regexp_split_to_array(rpath, ','))[2] :: INT THEN '2'
     when id = (regexp_split_to_array(rpath, ','))[3] :: INT THEN '3'
     when id = (regexp_split_to_array(rpath, ','))[4] :: INT THEN '4'
+    when id = (regexp_split_to_array(rpath, ','))[5] :: INT THEN '5'
+    when id = (regexp_split_to_array(rpath, ','))[6] :: INT THEN '6'
+    when id = (regexp_split_to_array(rpath, ','))[7] :: INT THEN '7'
+    when id = (regexp_split_to_array(rpath, ','))[8] :: INT THEN '8'
+    when id = (regexp_split_to_array(rpath, ','))[9] :: INT THEN '9'
+    when id = (regexp_split_to_array(rpath, ','))[10] :: INT THEN '10'
+    when id = (regexp_split_to_array(rpath, ','))[11] :: INT THEN '11'
+    when id = (regexp_split_to_array(rpath, ','))[12] :: INT THEN '12'
+    when id = (regexp_split_to_array(rpath, ','))[13] :: INT THEN '13'
+    when id = (regexp_split_to_array(rpath, ','))[14] :: INT THEN '14'
+    when id = (regexp_split_to_array(rpath, ','))[15] :: INT THEN '15'
     ELSE '0'
     end as place_of_its_own_id
-FROM united_states_al2_al12_2018_01_03_v1
+FROM osm_all_countries
 WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
 ORDER BY place_of_its_own_id;
 
@@ -80,10 +97,10 @@ SELECT t.gid,
        t.note,
        t.rpath,
        t.iso3166_2
-FROM united_states_al2_al12_2018_01_03_v1 t
-JOIN united_states_al2_al12_2018_01_03_v1 t1
+FROM osm_all_countries t
+JOIN osm_all_countries t1
     ON (regexp_split_to_array(t.rpath, ','))[1] :: INT = t1.id
-JOIN united_states_al2_al12_2018_01_03_v1 t2
+JOIN osm_all_countries t2
     ON (regexp_split_to_array(t.rpath, ','))[2] :: INT = t2.id
 
 WHERE (t1.adminlevel = t2.adminlevel OR t1.adminlevel < t2.adminlevel)
@@ -91,17 +108,18 @@ WHERE (t1.adminlevel = t2.adminlevel OR t1.adminlevel < t2.adminlevel)
   AND t.id not in (
 
     SELECT id
-    FROM united_states_al2_al12_2018_01_03_v1
+    FROM osm_all_countries
     WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
     )
 ;
 
 --Finding counterparts with same rpath--
-select id, name, adminlevel, rpath from france_al2_al12_2018_01_11_v1
+select id, name, adminlevel, rpath
+from osm_all_countries
 where rpath in (
 select rpath
-from france_al2_al12_2018_01_11_v1
-group by rpath
+from osm_all_countries
+group by rpath, name, adminlevel
 having count(rpath) > 1)
 order by rpath;
 
