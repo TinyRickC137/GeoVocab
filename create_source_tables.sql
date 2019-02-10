@@ -442,3 +442,10 @@ SELECT * FROM Zambia_AL2_AL12
 SELECT * FROM Zimbabwe_AL2_AL12
 )
 ;
+
+--Creating timestamp tables
+DROP TABLE IF EXISTS osm_all_countries_2019_02_03
+;
+
+CREATE TABLE IF NOT EXISTS osm_all_countries_2019_02_03 as (SELECT * FROM osm_all_countries)
+;

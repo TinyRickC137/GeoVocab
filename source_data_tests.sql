@@ -23,6 +23,25 @@ FROM osm_all_countries
 GROUP BY adminlevel
 ORDER BY adminlevel;
 
+--Consistency of hierarchy in upper parent
+SELECT gid,
+	   id,
+	   country,
+	   name,
+	   enname,
+	   locname,
+	   offname,
+	   boundary,
+	   adminlevel,
+	   wikidata,
+	   wikimedia,
+	   timestamp,
+	   note,
+	   rpath,
+	   iso3166_2
+FROM osm_all_countries
+WHERE rpath !~ '\,0$'
+;
 
 --Finding records with broken hierarchy (ID is not the beginning of rpath)
 SELECT gid,
@@ -159,3 +178,48 @@ FROM united_states_al2_al12_2018_01_03_v1 us
 LEFT JOIN united_states_al2_al12_2018_01_09_v2 usn ON us.id = usn.id
     Where us.rpath != usn.rpath
 ORDER BY changes;
+
+
+
+
+
+
+
+
+
+
+SELECT s.gid,
+	   s.id,
+	   s.country,
+	   s.name,
+	   s.enname,
+	   s.locname,
+	   s.offname,
+	   s.boundary,
+	   s.adminlevel,
+	   s.wikidata,
+	   s.wikimedia,
+	   s.timestamp,
+	   s.note,
+	   s.rpath,
+	   s.iso3166_2
+FROM osm_all_countries s
+
+LEFT JOIN osm_all_countries s2
+	ON	(regexp_split_to_array(s.rpath, ','))[2] :: INT = s2.id
+
+WHERE s.id = (regexp_split_to_array(s.rpath, ','))[1] :: INT
+AND s.adminlevel = s2.adminlevel
+;
+
+
+
+
+
+
+
+
+
+
+
+

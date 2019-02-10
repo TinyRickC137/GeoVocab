@@ -1,5 +1,9 @@
+--to check id 3496792, 114559
+
 --Creation of boundaries_hierarchy table
-DROP TABLE IF EXISTS boundaries_hierarchy;
+DROP TABLE IF EXISTS boundaries_hierarchy
+;
+
 CREATE TABLE IF NOT EXISTS boundaries_hierarchy
 (	gid integer,
 	id integer,
@@ -16,7 +20,19 @@ CREATE TABLE IF NOT EXISTS boundaries_hierarchy
 	note varchar(254),
 	rpath varchar(254),
 	iso3166_2 varchar(254),
-    ancestor_id integer
+    firts_ancestor_id integer,
+    second_ancestor_id integer
+)
+;
+
+--Creation of levenshtein values table
+DROP TABLE IF EXISTS levenshtein_values
+;
+
+CREATE TABLE IF NOT EXISTS levenshtein_values
+(	id_1 integer,
+	id_2 integer,
+	levenshtein_value integer
 )
 ;
 
@@ -40,9 +56,16 @@ SELECT s.gid,
 	   s.iso3166_2,
 	   CASE WHEN s.adminlevel > s2.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[2] :: INT
 		   	WHEN s.adminlevel = s2.adminlevel AND s2.adminlevel > s3.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[3] :: INT
-		   	WHEN s.adminlevel = s2.adminlevel AND s2.adminlevel = s3.adminlevel AND s3.adminlevel > s4.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[3] :: INT
-			ELSE 1
-		   	END as ancestor_id
+		   	WHEN s.adminlevel = s2.adminlevel AND s2.adminlevel = s3.adminlevel AND s3.adminlevel > s4.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[4] :: INT
+		   	WHEN s.adminlevel = 2 THEN (regexp_split_to_array(s.rpath, ','))[2] :: INT
+            ELSE 1
+		   	END as first_ancestor_id,
+       CASE WHEN s.adminlevel > s2.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[3] :: INT
+		   	WHEN s.adminlevel = s2.adminlevel AND s2.adminlevel > s3.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[4] :: INT
+		   	WHEN s.adminlevel = s2.adminlevel AND s2.adminlevel = s3.adminlevel AND s3.adminlevel > s4.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[5] :: INT
+		   	WHEN s.adminlevel = 2 THEN (regexp_split_to_array(s.rpath, ','))[2] :: INT
+            ELSE 1
+		   	END as second_ancestor_id
 
 FROM osm_all_countries s
 
@@ -56,64 +79,175 @@ LEFT JOIN osm_all_countries s4
 	ON	(regexp_split_to_array(s.rpath, ','))[4] :: INT = s4.id
 
 WHERE s.id = (regexp_split_to_array(s.rpath, ','))[1] :: INT
-AND s.adminlevel > 2;
 ;
 
 --there is no id in rpath
 INSERT INTO boundaries_hierarchy
-SELECT s1.gid,
-	   s1.id,
-	   s1.country,
-	   s1.name,
-	   s1.enname,
-	   s1.locname,
-	   s1.offname,
-	   s1.boundary,
-	   s1.adminlevel,
-	   s1.wikidata,
-	   s1.wikimedia,
-	   s1.timestamp,
-	   s1.note,
-	   s1.rpath,
-	   s1.iso3166_2,
-	   CASE WHEN s1.adminlevel > s2.adminlevel THEN (regexp_split_to_array(s1.rpath, ','))[2] :: INT
-		   	WHEN s1.adminlevel = s2.adminlevel AND s2.adminlevel > s3.adminlevel THEN (regexp_split_to_array(s1.rpath, ','))[3] :: INT
-		   	WHEN s1.adminlevel = s2.adminlevel AND s2.adminlevel = s3.adminlevel AND s3.adminlevel > s4.adminlevel THEN (regexp_split_to_array(s1.rpath, ','))[3] :: INT
+SELECT s.gid,
+	   s.id,
+	   s.country,
+	   s.name,
+	   s.enname,
+	   s.locname,
+	   s.offname,
+	   s.boundary,
+	   s.adminlevel,
+	   s.wikidata,
+	   s.wikimedia,
+	   s.timestamp,
+	   s.note,
+	   s.rpath,
+	   s.iso3166_2,
+	   CASE WHEN s.adminlevel > s1.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[1] :: INT
 			ELSE 1
-		   	END as ancestor_id
+		   	END as first_ancestor_id,
+	   CASE WHEN s.adminlevel > s1.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[2] :: INT
+			ELSE 1
+		   	END as second_ancestor_id
 
-FROM osm_all_countries s1
+FROM osm_all_countries s
 
-LEFT JOIN osm_all_countries s2
-	ON	(regexp_split_to_array(s1.rpath, ','))[2] :: INT = s2.id
+LEFT JOIN osm_all_countries s1
+	ON	(regexp_split_to_array(s.rpath, ','))[1] :: INT = s1.id
+
+WHERE s.rpath !~ ('(?<=(^|\,))' || s.id :: VARCHAR || '(?=\,)')
+;
+
+--id has the 2nd position in rpath
+INSERT INTO boundaries_hierarchy
+SELECT s.gid,
+	   s.id,
+	   s.country,
+	   s.name,
+	   s.enname,
+	   s.locname,
+	   s.offname,
+	   s.boundary,
+	   s.adminlevel,
+	   s.wikidata,
+	   s.wikimedia,
+	   s.timestamp,
+	   s.note,
+	   s.rpath,
+	   s.iso3166_2,
+	   CASE WHEN s.adminlevel = s1.adminlevel AND s.adminlevel > s3.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[3] :: INT
+		   	WHEN s.adminlevel = s3.adminlevel AND s3.adminlevel > s4.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[4] :: INT
+			ELSE 1
+		   	END as first_ancestor_id,
+	   CASE WHEN s.adminlevel = s1.adminlevel AND s.adminlevel > s3.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[4] :: INT
+		   	WHEN s.adminlevel = s3.adminlevel AND s3.adminlevel > s4.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[5] :: INT
+			ELSE 1
+		   	END as second_ancestor_id
+
+FROM osm_all_countries s
+
+LEFT JOIN osm_all_countries s1
+	ON	(regexp_split_to_array(s.rpath, ','))[1] :: INT = s1.id
 
 LEFT JOIN osm_all_countries s3
-	ON	(regexp_split_to_array(s1.rpath, ','))[3] :: INT = s3.id
+	ON	(regexp_split_to_array(s.rpath, ','))[3] :: INT = s3.id
 
 LEFT JOIN osm_all_countries s4
-	ON	(regexp_split_to_array(s1.rpath, ','))[4] :: INT = s4.id
+	ON	(regexp_split_to_array(s.rpath, ','))[4] :: INT = s4.id
 
-WHERE s1.rpath !~ (s1.id :: VARCHAR || '(?=\,)')
+WHERE s.id = (regexp_split_to_array(s.rpath, ','))[2] :: INT
+    AND s.id != (regexp_split_to_array(s.rpath, ','))[1] :: INT
 ;
 
-SELECT gid,
-	   id,
-	   country,
-	   name,
-	   enname,
-	   locname,
-	   offname,
-	   boundary,
-	   adminlevel,
-	   wikidata,
-	   wikimedia,
-	   timestamp,
-	   note,
-	   rpath,
-	   iso3166_2
+--id has the 3rd position in rpath
+INSERT INTO boundaries_hierarchy
+SELECT s.gid,
+	   s.id,
+	   s.country,
+	   s.name,
+	   s.enname,
+	   s.locname,
+	   s.offname,
+	   s.boundary,
+	   s.adminlevel,
+	   s.wikidata,
+	   s.wikimedia,
+	   s.timestamp,
+	   s.note,
+	   s.rpath,
+	   s.iso3166_2,
+	   CASE WHEN s.adminlevel = s1.adminlevel AND s.adminlevel = s2.adminlevel AND s.adminlevel > s4.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[4] :: INT
+		   	WHEN s.adminlevel = s1.adminlevel AND s.adminlevel = s2.adminlevel AND s.adminlevel = s4.adminlevel AND s.adminlevel > s5.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[5] :: INT
+			ELSE 1
+		   	END as first_ancestor_id,
+	   CASE WHEN s.adminlevel = s1.adminlevel AND s.adminlevel = s2.adminlevel AND s.adminlevel > s4.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[5] :: INT
+		   	WHEN s.adminlevel = s1.adminlevel AND s.adminlevel = s2.adminlevel AND s.adminlevel = s4.adminlevel AND s.adminlevel > s5.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[6] :: INT
+			ELSE 1
+		   	END as second_ancestor_id
+
+FROM osm_all_countries s
+
+LEFT JOIN osm_all_countries s1
+	ON	(regexp_split_to_array(s.rpath, ','))[1] :: INT = s1.id
+
+LEFT JOIN osm_all_countries s2
+	ON	(regexp_split_to_array(s.rpath, ','))[2] :: INT = s2.id
+
+LEFT JOIN osm_all_countries s4
+	ON	(regexp_split_to_array(s.rpath, ','))[4] :: INT = s4.id
+
+LEFT JOIN osm_all_countries s5
+	ON	(regexp_split_to_array(s.rpath, ','))[5] :: INT = s5.id
+
+WHERE s.id = (regexp_split_to_array(s.rpath, ','))[3] :: INT
+    AND s.id != (regexp_split_to_array(s.rpath, ','))[1] :: INT
+;
+
+CREATE INDEX idx_bh_id on boundaries_hierarchy(id);
+CREATE INDEX idx_bh_name on boundaries_hierarchy(name);
+ANALYZE boundaries_hierarchy;
+
+--Population of levenshtein values table
+INSERT INTO levenshtein_values
+SELECT a.id, a1.id, levenshtein (regexp_replace(a.name, '(?<=( |^))\w(?=( |$))|\d*|(?<=( |^))(I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*)(?!\w)', '', 'g'), regexp_replace(a1.name, '(?<=( |^))\w(?=( |$))|\d*|(?<=( |^))(I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*)(?!\w)', '', 'g'))
+FROM boundaries_hierarchy a
+
+JOIN boundaries_hierarchy a1
+         ON a.country = a1.country AND a.id != a1.id AND (a.firts_ancestor_id = a1.firts_ancestor_id OR a.firts_ancestor_id = a1.id )
+;
+
+CREATE INDEX idx_levenshtein_id1 on levenshtein_values(id_1);
+CREATE INDEX idx_levenshtein_id2 on levenshtein_values(id_2);
+CREATE INDEX idx_levenshtein_values on levenshtein_values(levenshtein_value);
+ANALYZE levenshtein_values;
+
+
+SELECT l.id_1, s1.name, regexp_replace(s1.name, '(?<=( |^))\w(?=( |$))|\d*|(?<=( |^))(I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*)(?!\w)', '', 'g')--, l.id_2, s2.name, l.levenshtein_value
+
+FROM levenshtein_values l
+
+JOIN osm_all_countries s1
+    ON l.id_1 = s1.id
+
+JOIN osm_all_countries s2
+    ON l.id_2 = s2.id
+
+WHERE levenshtein_value = 1
+;
+
+
+
+
+
+
+SELECT COUNT(*)
+FROM boundaries_hierarchy
+;
+
+SELECT COUNT(*)
 FROM osm_all_countries
-WHERE rpath !~ '\,0$'
 ;
+
+
+
+SELECT adminlevel
+FROM osm_all_countries
+WHERE id = 8617158;
 
 
 
