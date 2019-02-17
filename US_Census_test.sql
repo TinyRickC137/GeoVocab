@@ -163,12 +163,12 @@ FROM tl_2018_01_78_cousub;
 --Relationship between states and counties--
 WITH counties_concepts AS (SELECT * FROM concept_stage_CENSUS WHERE concept_class_id = 'County')
 INSERT INTO concept_relationship_stage_CENSUS
-SELECT cs.concept_id as concept_id_1,
-       cc.concept_id as concept_id_2,
-       cs.concept_code as concept_code_1,
-       cc.concept_code as concept_code_2,
-       cs.vocabulary_id as vocabulary_id_1,
-       cc.vocabulary_id as vocabulary_id_2,
+SELECT cc.concept_id as concept_id_1,
+       cs.concept_id as concept_id_2,
+       cc.concept_code as concept_code_1,
+       cs.concept_code as concept_code_2,
+       cc.vocabulary_id as vocabulary_id_1,
+       cs.vocabulary_id as vocabulary_id_2,
        'Is a' as relationship_id,
        CAST('1970-01-01' AS DATE) as valid_start_date,
        CAST('2099-12-31' AS DATE) as valid_end_date,
@@ -181,12 +181,12 @@ FROM concept_stage_CENSUS cs
 --Relationship between counties and subdivisions--
 WITH counties_subdivisions_concepts AS (SELECT * FROM concept_stage_CENSUS WHERE concept_class_id = 'County subdivision')
 INSERT INTO concept_relationship_stage_CENSUS
-SELECT cs.concept_id as concept_id_1,
-       cc.concept_id as concept_id_2,
-       cs.concept_code as concept_code_1,
-       cc.concept_code as concept_code_2,
-       cs.vocabulary_id as vocabulary_id_1,
-       cc.vocabulary_id as vocabulary_id_2,
+SELECT cc.concept_id as concept_id_1,
+       cs.concept_id as concept_id_2,
+       cc.concept_code as concept_code_1,
+       cs.concept_code as concept_code_2,
+       cc.vocabulary_id as vocabulary_id_1,
+       cs.vocabulary_id as vocabulary_id_2,
        'Is a' as relationship_id,
        CAST('1970-01-01' AS DATE) as valid_start_date,
        CAST('2099-12-31' AS DATE) as valid_end_date,
