@@ -3,23 +3,23 @@
 --COMMON CHECKS
 --Count of records
 SELECT COUNT (*)
-FROM osm_all_countries;
+FROM osm_2019_02_12;
 
 --Absence of not-unique IDs
 SELECT id, count(*)
-FROM osm_all_countries
+FROM osm_2019_02_12
 GROUP BY id
 HAVING COUNT(*) > 1;
 
 --Counts of records by Country
 SELECT country, COUNT (*)
-FROM osm_all_countries
+FROM osm_2019_02_12
 GROUP BY country;
 
 
 --Adminlevels distribution
 SELECT adminlevel, COUNT (*)
-FROM osm_all_countries
+FROM osm_2019_02_12
 GROUP BY adminlevel
 ORDER BY adminlevel;
 
@@ -39,7 +39,7 @@ SELECT gid,
 	   note,
 	   rpath,
 	   iso3166_2
-FROM osm_all_countries
+FROM osm_2019_02_12
 WHERE rpath !~ '\,0$'
 ;
 
@@ -59,7 +59,7 @@ SELECT gid,
        note,
        rpath,
        iso3166_2
-FROM osm_all_countries
+FROM osm_2019_02_12
 WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT;
 
 --Finding the position of id in rpath in records with broken hierarchy
@@ -95,7 +95,7 @@ SELECT gid,
     when id = (regexp_split_to_array(rpath, ','))[15] :: INT THEN '15'
     ELSE '0'
     end as place_of_its_own_id
-FROM osm_all_countries
+FROM osm_2019_02_12
 WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
 ORDER BY place_of_its_own_id;
 
@@ -116,10 +116,10 @@ SELECT t.gid,
        t.note,
        t.rpath,
        t.iso3166_2
-FROM osm_all_countries t
-JOIN osm_all_countries t1
+FROM osm_2019_02_12 t
+JOIN osm_2019_02_12 t1
     ON (regexp_split_to_array(t.rpath, ','))[1] :: INT = t1.id
-JOIN osm_all_countries t2
+JOIN osm_2019_02_12 t2
     ON (regexp_split_to_array(t.rpath, ','))[2] :: INT = t2.id
 
 WHERE (t1.adminlevel = t2.adminlevel OR t1.adminlevel < t2.adminlevel)
@@ -127,7 +127,7 @@ WHERE (t1.adminlevel = t2.adminlevel OR t1.adminlevel < t2.adminlevel)
   AND t.id not in (
 
     SELECT id
-    FROM osm_all_countries
+    FROM osm_2019_02_12
     WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
     )
 ;
@@ -143,24 +143,28 @@ having count(rpath) > 1)
 order by rpath;
 
 -----------------------------------------------
---TESTS for different versions of one country--
+--TESTS for different versions
 -----------------------------------------------
 
---not existing rows in each table
---current version: old USA vs new USA
-SELECT us.id as old_id,
-       usn.id as new_id,
+--new ids & deprecated ids
+SELECT old.id as old_id,
+       new.id as new_id,
        CASE
-           WHEN usn.id IS NULL THEN 'Deprecated area ID'
-           ELSE 'New area ID'
+           WHEN new.id IS NULL THEN 'Deprecated ID'
+           WHEN old.id IS NULL THEN 'New ID'
        END AS changes,
-       us.name as old_name,
-       usn.name as new_name,
-       us.rpath as old_rpath,
-       usn.rpath as new_rpath
-from united_states_al2_al12_2018_01_03_v1 us full outer join united_states_al2_al12_2018_01_09_v2 usn
-    ON us.id = usn.id and us.name = usn.name and us.rpath = usn.rpath
-where us.id IS NULL OR usn.id IS NULL;
+       old.name as old_name,
+       new.name as new_name,
+       old.rpath as old_rpath,
+       new.rpath as new_rpath
+from united_states_al2_al12_2018_01_03 old
+
+full outer join united_states_al2_al12_2018_01_09 new
+    ON old.id = new.id-- and old.name = new.name and old.rpath = new.rpath
+
+where old.id IS NULL OR
+      new.id IS NULL
+;
 
 
 --Finding concepts with name and hierarchy changes
@@ -171,6 +175,8 @@ FROM united_states_al2_al12_2018_01_03_v1 us
 LEFT JOIN united_states_al2_al12_2018_01_09_v2 usn ON us.id = usn.id
     Where us.name != usn.name
 UNION
+
+
 --Rpath_changed--
 SELECT us.id as id, 'Path changed' as changes, us.name as old_name, usn.name as new_name,
        us.rpath as old_rpath, usn.rpath as new_rpath
@@ -180,46 +186,21 @@ LEFT JOIN united_states_al2_al12_2018_01_09_v2 usn ON us.id = usn.id
 ORDER BY changes;
 
 
-
-
-
-
-
-
-
-
-SELECT s.gid,
-	   s.id,
-	   s.country,
-	   s.name,
-	   s.enname,
-	   s.locname,
-	   s.offname,
-	   s.boundary,
-	   s.adminlevel,
-	   s.wikidata,
-	   s.wikimedia,
-	   s.timestamp,
-	   s.note,
-	   s.rpath,
-	   s.iso3166_2
-FROM osm_all_countries s
-
-LEFT JOIN osm_all_countries s2
-	ON	(regexp_split_to_array(s.rpath, ','))[2] :: INT = s2.id
-
-WHERE s.id = (regexp_split_to_array(s.rpath, ','))[1] :: INT
-AND s.adminlevel = s2.adminlevel
-;
-
-
-
-
-
-
-
-
-
-
-
-
+--Select object by id
+SELECT gid,
+       id,
+       country,
+       name,
+       enname,
+       locname,
+       offname,
+       boundary,
+       adminlevel,
+       wikidata,
+       wikimedia,
+       timestamp,
+       note,
+       rpath,
+       iso3166_2
+FROM united_states_al2_al12
+WHERE id = 119133;
