@@ -204,3 +204,149 @@ SELECT gid,
        iso3166_2
 FROM united_states_al2_al12
 WHERE id = 119133;
+
+
+
+
+
+--counterparts with equal geography
+CREATE TABLE counterparts (id_1 integer, id_2 integer);
+
+INSERT INTO counterparts
+SELECT a1.id as id_1, a2.id as id_2
+FROM boundaries_hierarchy a1
+
+JOIN boundaries_hierarchy a2
+         ON a1.country = a2.country AND a1.id != a2.id --AND (/*a1.firts_ancestor_id = a2.firts_ancestor_id OR*/ a1.firts_ancestor_id = a2.id)
+
+JOIN osm_2019_02_15 osm1
+    ON a1.id = osm1.id
+
+JOIN osm_2019_02_15 osm2
+    ON a2.id = osm2.id
+
+WHERE osm1.geom = osm2.geom
+;
+
+SELECT c.id_1, c.id_2, a1.name, a1.enname, a1.locname, a1.offname, a2.name, a2.enname, a2.locname, a2.offname
+FROM counterparts c
+
+JOIN boundaries_hierarchy a1
+	ON c.id_1 = a1.id
+
+JOIN boundaries_hierarchy a2
+	ON c.id_2 = a2.id
+
+WHERE a1.adminlevel < a2.adminlevel
+	AND regexp_replace(a1.name, '^Town of |^City of |^Ortsbeirat \d+ : | City$', '') = regexp_replace (a2.name, '^Gemarkung | Adentro$| City$', '')
+	AND (regexp_replace(a1.locname, '^Town of |^City of |^Ortsbeirat \d+ : | City$', '') = regexp_replace (a2.locname, '^Gemarkung | Adentro$| City$', '') OR (a1.locname IS NULL AND a2.locname IS NULL))
+	AND (a1.offname = a2.offname OR (a1.offname IS NULL AND a2.offname IS NULL))
+	AND a2.firts_ancestor_id != a1.id
+	--AND c.id_1 NOT IN (71525, 1641193, 7444, 2796746, 5190243, 5190251) -->2 objects with the same geometry
+;
+
+
+SELECT a1.id, a1.name, a1.locname, a2.id, a2.name, a2.locname,
+       st_distance(osm1.geom::geography, osm2.geom::geography) as distance,
+       --st_distance((st_pointonsurface(osm1.geom)::geography), (st_pointonsurface(osm2.geom)::geography)) as distance_pos,
+       --st_distance((ST_Centroid(osm1.geom::geography)), (ST_Centroid(osm2.geom::geography))) as distance_centroid,
+       st_area (osm2.geom::geography) / st_area (osm1.geom::geography) as area_factor,
+	   st_area (osm1.geom::geography) as area_1,
+	   st_area (osm2.geom::geography) as area_2,
+	   CASE WHEN st_distance(osm1.geom::geography, osm2.geom::geography) > 0 THEN
+	       (|/ st_area (osm2.geom::geography)) / st_distance(osm1.geom::geography, osm2.geom::geography)
+		ELSE 0 END as factor
+
+--a1.name, COUNT (*)
+
+FROM boundaries_hierarchy a1
+
+JOIN boundaries_hierarchy a2
+         ON a1.country = a2.country AND a1.id != a2.id AND a1.name = a2.name AND (a1.firts_ancestor_id = a2.firts_ancestor_id /*OR a1.firts_ancestor_id = a2.id*/) AND a1.adminlevel = a2.adminlevel
+
+ JOIN osm_2019_02_15 osm1
+    ON a1.id = osm1.id
+
+JOIN osm_2019_02_15 osm2
+    ON a2.id = osm2.id
+
+
+WHERE st_area (osm1.geom::geography) < st_area (osm2.geom::geography)
+	AND (a1.locname = a2.locname OR (a1.locname IS NULL AND a2.locname IS NULL))
+	AND (a1.enname = a2.enname OR (a1.enname IS NULL AND a2.enname IS NULL))
+	AND (a1.offname = a2.offname OR (a1.offname IS NULL AND a2.offname IS NULL))
+	--AND (|/ st_area (osm2.geom::geography)) > st_distance(osm1.geom::geography, osm2.geom::geography)
+--GROUP BY a1.name
+--HAVING COUNT(*) = 2
+;
+
+
+--Creation of levenshtein values table
+DROP TABLE IF EXISTS levenshtein_values
+;
+
+CREATE TABLE IF NOT EXISTS levenshtein_values
+(	id_1 integer,
+	id_2 integer,
+	levenshtein_value integer
+)
+;
+
+--Population of levenshtein values table
+INSERT INTO levenshtein_values
+SELECT a.id, a1.id, levenshtein (regexp_replace(a.name, '(?<=( |^))\w(?=( |$))|\d*|(?<=( |^))(I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*)(?!\w)', '', 'g'), regexp_replace(a1.name, '(?<=( |^))\w(?=( |$))|\d*|(?<=( |^))(I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*I*L*V*X*)(?!\w)', '', 'g'))
+FROM boundaries_hierarchy a
+
+JOIN boundaries_hierarchy a1
+         ON a.country = a1.country AND a.id != a1.id AND (a.firts_ancestor_id = a1.firts_ancestor_id OR a.firts_ancestor_id = a1.id )
+;
+
+CREATE INDEX idx_levenshtein_id1 on levenshtein_values(id_1);
+CREATE INDEX idx_levenshtein_id2 on levenshtein_values(id_2);
+CREATE INDEX idx_levenshtein_values on levenshtein_values(levenshtein_value);
+ANALYZE levenshtein_values;
+
+SELECT l.id_1, s1.name, l.id_2, s2.name, l.levenshtein_value
+
+FROM levenshtein_values l
+
+JOIN osm_all_countries s1
+    ON l.id_1 = s1.id
+
+JOIN osm_all_countries s2
+    ON l.id_2 = s2.id
+
+WHERE levenshtein_value = 1 AND s1.country in ('USA')
+;
+
+--there is no id in rpath
+INSERT INTO boundaries_hierarchy
+SELECT s.gid,
+	   s.id,
+	   s.country,
+	   s.name,
+	   s.enname,
+	   s.locname,
+	   s.offname,
+	   s.boundary,
+	   s.adminlevel,
+	   s.wikidata,
+	   s.wikimedia,
+	   s.timestamp,
+	   s.note,
+	   s.rpath,
+	   s.iso3166_2,
+	   CASE WHEN s.adminlevel > s1.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[1] :: INT
+			ELSE 1
+		   	END as first_ancestor_id,
+	   CASE WHEN s.adminlevel > s1.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[2] :: INT
+			ELSE 1
+		   	END as second_ancestor_id
+
+FROM osm_2019_02_15 s
+
+LEFT JOIN osm_2019_02_15 s1
+	ON	(regexp_split_to_array(s.rpath, ','))[1] :: INT = s1.id
+
+WHERE s.rpath !~ ('(?<=(^|\,))' || s.id :: VARCHAR || '(?=\,)')
+;

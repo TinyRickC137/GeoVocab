@@ -1,97 +1,173 @@
---TODO: check if the fields in this tables correlate with CDM
---TODO: make a decision for adminlevel names
---TODO: decide what to do with broken concepts. We can exclude them from hierarchy or auto-change the rpath
---Creating concept_stage--
-DROP TABLE IF EXISTS concept_stage;
+--Creation of concept_stage
+DROP TABLE IF EXISTS concept_stage
+;
+
 CREATE TABLE concept_stage
 (
   concept_id       integer,
-  concept_name     text,
-  domain_id        text,
-  vocabulary_id    text,
-  concept_class_id text,
-  standard_concept text,
-  concept_code     integer,
+  concept_name     varchar(255),
+  domain_id        varchar(20),
+  vocabulary_id    varchar(20),
+  concept_class_id varchar(20),
+  standard_concept varchar(1),
+  concept_code     varchar(50),
   valid_start_date date,
   valid_end_date   date,
-  invalid_reason   text
-);
+  invalid_reason   varchar(1)
+)
+;
 
+--Creation of concept_synonym_stage
+DROP TABLE IF EXISTS concept_synonym_stage
+;
 
---Creating concept_relationship_stage--
-DROP TABLE IF EXISTS concept_relationship_stage;
+CREATE TABLE concept_synonym_stage
+(
+	synonym_concept_id integer,
+	synonym_name varchar(1000),
+	synonym_concept_code varchar(50),
+	synonym_vocabulary_id varchar(20),
+	language_concept_id integer
+)
+;
+
+--Creation of concept_relationship_stage
+DROP TABLE IF EXISTS concept_relationship_stage
+;
+
 CREATE TABLE concept_relationship_stage
 (
   concept_id_1     integer,
   concept_id_2     integer,
-  concept_code_1   integer     not null,
-  concept_code_2   integer     not null,
-  vocabulary_id_1  varchar(20) not null,
-  vocabulary_id_2  varchar(20) not null,
-  relationship_id  varchar(20) not null,
-  valid_start_date date        not null,
-  valid_end_date   date        not null,
+  concept_code_1   varchar(50),
+  concept_code_2   varchar(50),
+  vocabulary_id_1  varchar(20),
+  vocabulary_id_2  varchar(20),
+  relationship_id  varchar(20),
+  valid_start_date date,
+  valid_end_date   date,
   invalid_reason   varchar(1)
-);
+)
+;
 
-
---Populating concept_stage--
---united_states_al2_al12_2018_01_03_v1--
+--Population of concept_stage
 INSERT INTO concept_stage
-SELECT id + 2100000000 AS concept_id,
-  name AS concept_name,
-	NULL AS domain_id,
-  'OSM' AS vocabulary_id,
-  CASE CAST(adminlevel AS INT)
-    WHEN 2 THEN 'Country'
-    WHEN 4 THEN 'State'
-    WHEN 5 THEN 'Agglomerate'
-    WHEN 6 THEN 'County'
-    WHEN 7 THEN 'Civil township'
-    WHEN 8 THEN 'Municipality'
-    WHEN 9 THEN 'Ward'
-    WHEN 10 THEN 'Neighborhood'
-    WHEN 11 THEN 'Subarea'
-    ELSE 'Unknown geo area'
-  END as concept_class_id,
-  NULL as standard_concept,
-  id as concept_code,
-  CAST('1970-01-01' AS DATE) as valid_start_date,
-  CAST('2099-12-31' AS DATE) as valid_end_date,
-  NULL as invalid_reason
-FROM united_states_al2_al12_2018_01_03_v1;
+SELECT NULL AS concept_id,
+	   name AS concept_name,
+	   'Geography' AS domain_id,
+	   'OSM' AS vocabulary_id,
+	   CASE adminlevel :: INT
+		   WHEN 2 THEN '2nd level'
+		   WHEN 3 THEN '3rd level'
+		   WHEN 4 THEN '4th level'
+		   WHEN 5 THEN '5th level'
+		   WHEN 6 THEN '6th level'
+		   WHEN 7 THEN '7th level'
+		   WHEN 8 THEN '8th level'
+		   WHEN 9 THEN '9th level'
+		   WHEN 10 THEN '10th level'
+		   WHEN 11 THEN '11th level'
+		   WHEN 12 THEN '12th level' END as concept_class_id,
+	   'S' as standard_concept,
+	   id as concept_code,
+	   '1970-01-01' :: DATE as valid_start_date,
+	   '2099-12-31' :: DATE as valid_end_date,
+	   NULL as invalid_reason
+FROM boundaries_hierarchy
+;
+
+--Population of concept_synonym_stage
+--locname
+INSERT INTO concept_synonym_stage
+SELECT NULL as synonym_concept_id,
+	   locname as synonym_name,
+	   id as synonym_concept_code,
+	   'OSM' as synonym_vocabulary_id,
+	   CASE country
+		   WHEN 'BEL' THEN 4180186
+		   WHEN 'BRA' THEN 4181536
+		   WHEN 'CAN' THEN 4180190
+		   WHEN 'CHN' THEN 4182948
+		   WHEN 'DEU' THEN 4182504
+		   WHEN 'DNK' THEN 4180183
+		   WHEN 'ESP' THEN 4182511
+		   WHEN 'FRA' THEN 4180190
+		   WHEN 'GBR' THEN 4180186
+		   WHEN 'ISR' THEN CASE WHEN locname ~* 'א‬|ב|ג|ד|ה|ו|ז|ח|ט|י|מ|נ|ם|ן|פ|צ|ף|ץ|ס|ע|ק|ר|ש|ת|ל|כ|ך' THEN 4180047
+		                        WHEN locname !~* 'א‬|ב|ג|ד|ה|ו|ז|ח|ט|י|מ|נ|ם|ן|פ|צ|ף|ץ|ס|ע|ק|ר|ש|ת|ל|כ|ך' THEN 4181374 END
+		   WHEN 'ITA' THEN 4182507
+		   WHEN 'JPN' THEN 4181524
+		   WHEN 'KOR' THEN 4175771
+		   WHEN 'NLD' THEN 4182503
+		   WHEN 'SAU' THEN 4181374
+		   WHEN 'SWE' THEN 4175777
+		   WHEN 'USA' THEN 4180186
+		   WHEN 'ZAF' THEN 4180186
+		   ELSE 0 END as language_concept_id
+FROM boundaries_hierarchy
+WHERE locname != name
+;
 
 
---Populating concept_stage--
---france_al2_al12_2018_01_11_v1--
-INSERT INTO concept_stage
-SELECT id + 2100000000 AS concept_id,
-  name AS concept_name,
-	NULL AS domain_id,
-  'OSM' AS vocabulary_id,
-  CASE CAST(adminlevel AS INT)
-    WHEN 2 THEN 'Country'
-    WHEN 3 THEN 'Territorial area'
-    WHEN 4 THEN 'Région'
-    WHEN 5 THEN 'Circonscription départementale'
-    WHEN 6 THEN 'Département'
-    WHEN 7 THEN 'Arrondissement'
-    WHEN 8 THEN 'Commune'
-    WHEN 9 THEN 'Arrondissements municipaux or analogue'
-    WHEN 10 THEN 'Quartier'
-    WHEN 11 THEN 'Micro-quartier'
-    ELSE 'Unknown geo area'
-  END as concept_class_id,
-  NULL as standard_concept,
-  id as concept_code,
-  CAST('1970-01-01' AS DATE) as valid_start_date,
-  CAST('2099-12-31' AS DATE) as valid_end_date,
-  NULL as invalid_reason
-FROM france_al2_al12_2018_01_11_v1;
 
 
---Populating concept_relationship_stage--
---SHOULD BE DONE AFTER ALL THE OTHER TABLES--
+
+--202722
+SELECT COUNT (*)
+FROM boundaries_hierarchy a
+;
+
+--Just name is used
+--184622
+SELECT COUNT (*)
+FROM boundaries_hierarchy a
+WHERE (name = enname OR enname IS NULL)
+  AND (name = locname OR locname IS NULL)
+  AND (name = offname OR offname IS NULL)
+;
+
+--enname is always useless since it's equal to name if NOT NULL
+--0
+SELECT *
+FROM boundaries_hierarchy a
+WHERE (name != enname)
+;
+
+
+SELECT *
+FROM boundaries_hierarchy a
+WHERE locname != name
+;
+
+
+--Hebrew language
+SELECT *
+FROM boundaries_hierarchy a
+WHERE country = 'ISR' AND locname != name
+AND locname !~* 'א‬|ב|ג|ד|ה|ו|ז|ח|ט|י|מ|נ|ם|ן|פ|צ|ף|ץ|ס|ע|ק|ר|ש|ת|ל|כ|ך'
+ORDER BY locname
+;
+
+
+--CHN parcing
+SELECT id,
+       locname,
+       regexp_replace(regexp_split_to_table (locname, ' / | \('), '\)$', ''),
+	   CASE WHEN regexp_replace(regexp_split_to_table (locname, ' / | \('), '\)$', '') ~* '' THEN 'Eng'
+		   END as language
+
+FROM boundaries_hierarchy a
+WHERE locname != name
+	AND country = 'CHN'
+;
+
+
+
+
+
+
+
+--Population of concept_relationship_stage
 INSERT INTO concept_relationship_stage
 SELECT cs.concept_id as concept_id_1,
        bh.concept_id as concept_id_2,
@@ -103,4 +179,7 @@ SELECT cs.concept_id as concept_id_1,
        CAST('1970-01-01' AS DATE) as valid_start_date,
        CAST('2099-12-31' AS DATE) as valid_end_date,
        NULL as invalid_reason
-FROM concept_stage cs JOIN bound_hierarchy bh ON bh.closest_ancestor = cs.concept_code;
+FROM concept_stage cs
+JOIN bound_hierarchy bh
+	ON bh.closest_ancestor = cs.concept_code
+;
