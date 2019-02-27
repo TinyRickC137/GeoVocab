@@ -1,38 +1,3 @@
---Creation of boundaries_hierarchy table
-DROP TABLE IF EXISTS boundaries_hierarchy
-;
-
-CREATE TABLE IF NOT EXISTS boundaries_hierarchy
-(	gid integer,
-	id integer,
-	country varchar(254),
-	name varchar(254),
-	enname varchar(254),
-	locname varchar(254),
-	offname varchar(254),
-	boundary varchar(254),
-	adminlevel integer,
-	wikidata varchar(254),
-	wikimedia varchar(254),
-	timestamp varchar(254),
-	note varchar(254),
-	rpath varchar(254),
-	iso3166_2 varchar(254),
-    firts_ancestor_id integer,
-    second_ancestor_id integer
-)
-;
-
---Creation of excluded_objects table
-DROP TABLE IF EXISTS excluded_objects
-;
-
-CREATE TABLE IF NOT EXISTS excluded_objects AS
-    (
-    SELECT * FROM boundaries_hierarchy WHERE FALSE
-    )
-;
-
 --Population of boundaries_hierarchy table
 --id has the 1st position in rpath
 INSERT INTO boundaries_hierarchy
@@ -66,18 +31,18 @@ SELECT s.gid,
             ELSE 1
 		   	END as second_ancestor_id
 
-FROM osm_2019_02_15 s
+FROM osm_2019_02_25 s
 
-LEFT JOIN osm_2019_02_15 s2
+LEFT JOIN osm_2019_02_25 s2
 	ON	(regexp_split_to_array(s.rpath, ','))[2] :: INT = s2.id
 
-LEFT JOIN osm_2019_02_15 s3
+LEFT JOIN osm_2019_02_25 s3
 	ON	(regexp_split_to_array(s.rpath, ','))[3] :: INT = s3.id
 
-LEFT JOIN osm_2019_02_15 s4
+LEFT JOIN osm_2019_02_25 s4
 	ON	(regexp_split_to_array(s.rpath, ','))[4] :: INT = s4.id
 
-LEFT JOIN osm_2019_02_15 s5
+LEFT JOIN osm_2019_02_25 s5
 	ON	(regexp_split_to_array(s.rpath, ','))[5] :: INT = s5.id
 
 WHERE s.id = (regexp_split_to_array(s.rpath, ','))[1] :: INT
@@ -109,15 +74,15 @@ SELECT s.gid,
 			ELSE 1
 		   	END as second_ancestor_id
 
-FROM osm_2019_02_15 s
+FROM osm_2019_02_25 s
 
-LEFT JOIN osm_2019_02_15 s1
+LEFT JOIN osm_2019_02_25 s1
 	ON	(regexp_split_to_array(s.rpath, ','))[1] :: INT = s1.id
 
-LEFT JOIN osm_2019_02_15 s3
+LEFT JOIN osm_2019_02_25 s3
 	ON	(regexp_split_to_array(s.rpath, ','))[3] :: INT = s3.id
 
-LEFT JOIN osm_2019_02_15 s4
+LEFT JOIN osm_2019_02_25 s4
 	ON	(regexp_split_to_array(s.rpath, ','))[4] :: INT = s4.id
 
 WHERE s.id = (regexp_split_to_array(s.rpath, ','))[2] :: INT
@@ -152,30 +117,26 @@ SELECT s.gid,
 			ELSE 1
 		   	END as second_ancestor_id
 
-FROM osm_2019_02_15 s
+FROM osm_2019_02_25 s
 
-LEFT JOIN osm_2019_02_15 s1
+LEFT JOIN osm_2019_02_25 s1
 	ON	(regexp_split_to_array(s.rpath, ','))[1] :: INT = s1.id
 
-LEFT JOIN osm_2019_02_15 s2
+LEFT JOIN osm_2019_02_25 s2
 	ON	(regexp_split_to_array(s.rpath, ','))[2] :: INT = s2.id
 
-LEFT JOIN osm_2019_02_15 s4
+LEFT JOIN osm_2019_02_25 s4
 	ON	(regexp_split_to_array(s.rpath, ','))[4] :: INT = s4.id
 
-LEFT JOIN osm_2019_02_15 s5
+LEFT JOIN osm_2019_02_25 s5
 	ON	(regexp_split_to_array(s.rpath, ','))[5] :: INT = s5.id
 
-LEFT JOIN osm_2019_02_15 s10
+LEFT JOIN osm_2019_02_25 s10
 	ON	(regexp_split_to_array(s.rpath, ','))[10] :: INT = s10.id
 
 WHERE s.id = (regexp_split_to_array(s.rpath, ','))[3] :: INT
     AND s.id != (regexp_split_to_array(s.rpath, ','))[1] :: INT
 ;
-
-CREATE INDEX idx_bh_id on boundaries_hierarchy(id);
-CREATE INDEX idx_bh_name on boundaries_hierarchy(name);
-ANALYZE boundaries_hierarchy;
 
 --Excluding the useless & no name objects & >2 count objects
 INSERT INTO excluded_objects
@@ -389,10 +350,3 @@ WHERE id in (
 DELETE FROM boundaries_hierarchy
 WHERE id in (SELECT id FROM excluded_objects)
 ;
-
---Index
-DROP INDEX idx_bh_id;
-DROP INDEX idx_bh_name;
-CREATE INDEX idx_bh_id on boundaries_hierarchy(id);
-CREATE INDEX idx_bh_name on boundaries_hierarchy(name);
-ANALYZE boundaries_hierarchy;

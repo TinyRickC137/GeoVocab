@@ -555,15 +555,6 @@ SELECT * FROM united_states_al2_al12_2019_02_12
 )
 ;
 
-CREATE INDEX idx_osm_2019_02_12_gist ON osm_2019_02_12 USING GIST (geom)
-;
-
-CREATE INDEX idx_osm_2019_02_12_gist_3d ON osm_2019_02_12 USING GIST (geom gist_geometry_ops_nd)
-;
-
-ANALYZE osm_2019_02_12 (geom)
-;
-
 --2019-02-15
 DROP TABLE IF EXISTS osm_2019_02_15
 ;
@@ -609,56 +600,68 @@ SELECT * FROM united_states_al2_al12_2019_02_15
 )
 ;
 
-CREATE INDEX idx_osm_2019_02_15_gist ON osm_2019_02_15 USING GIST (geom)
+--2019-02-25
+DROP TABLE IF EXISTS osm_2019_02_25
 ;
 
-CREATE INDEX idx_osm_2019_02_15_gist_3d ON osm_2019_02_15 USING GIST (geom gist_geometry_ops_nd)
+CREATE TABLE IF NOT EXISTS osm_2019_02_25 AS (
+SELECT * FROM osm_australia_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_belgium_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_brazil_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_canada_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_china_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_denmark_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_france_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_germany_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_israel_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_italy_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_japan_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_saudi_arabia_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_south_africa_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_south_korea_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_spain_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_sweden_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_netherlands_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_united_kingdom_al2_al12_2019_02_25
+    UNION ALL
+SELECT * FROM osm_united_states_al2_al12_2019_02_25
+)
 ;
 
-ANALYZE osm_2019_02_15 (geom)
-;
-
---2019-02-24
-DROP TABLE IF EXISTS osm_2019_02_24
-;
-
-CREATE TABLE IF NOT EXISTS osm_2019_02_24 AS (
-SELECT * FROM osm_australia_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_belgium_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_brazil_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_canada_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_china_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_denmark_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_france_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_germany_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_israel_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_italy_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_japan_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_saudi_arabia_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_south_africa_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_south_korea_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_spain_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_sweden_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_netherlands_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_united_kingdom_al2_al12_2019_02_24
-    UNION ALL
-SELECT * FROM osm_united_states_al2_al12_2019_02_24
+create table osm_2019_02_25
+(
+	gid integer,
+	id integer,
+	country varchar(254),
+	name varchar(254),
+	enname varchar(254),
+	locname varchar(254),
+	offname varchar(254),
+	boundary varchar(254),
+	adminlevel integer,
+	wikidata varchar(254),
+	wikimedia varchar(254),
+	timestamp varchar(254),
+	note varchar(254),
+	rpath varchar(254),
+	iso3166_2 varchar(254),
+	geom devv5.geometry(MultiPolygon,4326)
 )
 ;

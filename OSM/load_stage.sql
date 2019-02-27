@@ -108,7 +108,37 @@ FROM boundaries_hierarchy
 WHERE locname != name
 ;
 
-
+--offname
+INSERT INTO concept_synonym_stage
+SELECT NULL as synonym_concept_id,
+	   offname as synonym_name,
+	   id as synonym_concept_code,
+	   'OSM' as synonym_vocabulary_id,
+	   CASE country
+		   WHEN 'BEL' THEN 4180186
+		   WHEN 'BRA' THEN 4181536
+		   WHEN 'CAN' THEN 4180190
+		   WHEN 'CHN' THEN 4182948
+		   WHEN 'DEU' THEN 4182504
+		   WHEN 'DNK' THEN 4180183
+		   WHEN 'ESP' THEN 4182511
+		   WHEN 'FRA' THEN 4180190
+		   WHEN 'GBR' THEN 4180186
+		   WHEN 'ISR' THEN CASE WHEN locname ~* 'א‬|ב|ג|ד|ה|ו|ז|ח|ט|י|מ|נ|ם|ן|פ|צ|ף|ץ|ס|ע|ק|ר|ש|ת|ל|כ|ך' THEN 4180047
+		                        WHEN locname !~* 'א‬|ב|ג|ד|ה|ו|ז|ח|ט|י|מ|נ|ם|ן|פ|צ|ף|ץ|ס|ע|ק|ר|ש|ת|ל|כ|ך' THEN 4181374 END
+		   WHEN 'ITA' THEN 4182507
+		   WHEN 'JPN' THEN 4181524
+		   WHEN 'KOR' THEN 4175771
+		   WHEN 'NLD' THEN 4182503
+		   WHEN 'SAU' THEN 4181374
+		   WHEN 'SWE' THEN 4175777
+		   WHEN 'USA' THEN 4180186
+		   WHEN 'ZAF' THEN 4180186
+		   ELSE 0 END as language_concept_id
+FROM boundaries_hierarchy
+WHERE   offname != name
+	AND offname != locname
+;
 
 
 
@@ -133,7 +163,7 @@ FROM boundaries_hierarchy a
 WHERE (name != enname)
 ;
 
-
+--locname
 SELECT *
 FROM boundaries_hierarchy a
 WHERE locname != name
@@ -161,25 +191,46 @@ WHERE locname != name
 	AND country = 'CHN'
 ;
 
-
+--offname
+SELECT *
+FROM boundaries_hierarchy a
+WHERE   offname != name
+	AND offname != locname
+;
 
 
 
 
 
 --Population of concept_relationship_stage
+--Is a relationship
 INSERT INTO concept_relationship_stage
-SELECT cs.concept_id as concept_id_1,
-       bh.concept_id as concept_id_2,
-       cs.concept_code as concept_code_1,
-       bh.concept_code as concept_code_2,
-       cs.vocabulary_id as vocabulary_id_1,
-       bh.vocabulary_id as vocabulary_id_2,
+SELECT NULL as concept_id_1,
+       NULL as concept_id_2,
+       id as concept_code_1,
+       firts_ancestor_id as concept_code_2,
+       'OSM' as vocabulary_id_1,
+       'OSM' as vocabulary_id_2,
        'Is a' as relationship_id,
-       CAST('1970-01-01' AS DATE) as valid_start_date,
-       CAST('2099-12-31' AS DATE) as valid_end_date,
+       '1970-01-01' :: DATE as valid_start_date,
+       '2099-12-31' :: DATE as valid_end_date,
        NULL as invalid_reason
-FROM concept_stage cs
-JOIN bound_hierarchy bh
-	ON bh.closest_ancestor = cs.concept_code
+FROM boundaries_hierarchy
+WHERE firts_ancestor_id != '0'
+;
+
+--Subsumes relationship
+INSERT INTO concept_relationship_stage
+SELECT NULL as concept_id_1,
+       NULL as concept_id_2,
+       firts_ancestor_id as concept_code_1,
+       id as concept_code_2,
+       'OSM' as vocabulary_id_1,
+       'OSM' as vocabulary_id_2,
+       'Subsumes' as relationship_id,
+       '1970-01-01' :: DATE as valid_start_date,
+       '2099-12-31' :: DATE as valid_end_date,
+       NULL as invalid_reason
+FROM boundaries_hierarchy
+WHERE firts_ancestor_id != '0'
 ;

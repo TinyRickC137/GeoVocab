@@ -3,23 +3,23 @@
 --COMMON CHECKS
 --Count of records
 SELECT COUNT (*)
-FROM osm_2019_02_12;
+FROM osm_2019_02_25;
 
 --Absence of not-unique IDs
 SELECT id, count(*)
-FROM osm_2019_02_12
+FROM osm_2019_02_25
 GROUP BY id
 HAVING COUNT(*) > 1;
 
 --Counts of records by Country
 SELECT country, COUNT (*)
-FROM osm_2019_02_12
+FROM osm_2019_02_25
 GROUP BY country;
 
 
 --Adminlevels distribution
 SELECT adminlevel, COUNT (*)
-FROM osm_2019_02_12
+FROM osm_2019_02_25
 GROUP BY adminlevel
 ORDER BY adminlevel;
 
@@ -39,7 +39,7 @@ SELECT gid,
 	   note,
 	   rpath,
 	   iso3166_2
-FROM osm_2019_02_12
+FROM osm_2019_02_25
 WHERE rpath !~ '\,0$'
 ;
 
@@ -59,7 +59,7 @@ SELECT gid,
        note,
        rpath,
        iso3166_2
-FROM osm_2019_02_12
+FROM osm_2019_02_25
 WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT;
 
 --Finding the position of id in rpath in records with broken hierarchy
@@ -95,7 +95,7 @@ SELECT gid,
     when id = (regexp_split_to_array(rpath, ','))[15] :: INT THEN '15'
     ELSE '0'
     end as place_of_its_own_id
-FROM osm_2019_02_12
+FROM osm_2019_02_25
 WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
 ORDER BY place_of_its_own_id;
 
@@ -116,10 +116,10 @@ SELECT t.gid,
        t.note,
        t.rpath,
        t.iso3166_2
-FROM osm_2019_02_12 t
-JOIN osm_2019_02_12 t1
+FROM osm_2019_02_25 t
+JOIN osm_2019_02_25 t1
     ON (regexp_split_to_array(t.rpath, ','))[1] :: INT = t1.id
-JOIN osm_2019_02_12 t2
+JOIN osm_2019_02_25 t2
     ON (regexp_split_to_array(t.rpath, ','))[2] :: INT = t2.id
 
 WHERE (t1.adminlevel = t2.adminlevel OR t1.adminlevel < t2.adminlevel)
@@ -127,7 +127,7 @@ WHERE (t1.adminlevel = t2.adminlevel OR t1.adminlevel < t2.adminlevel)
   AND t.id not in (
 
     SELECT id
-    FROM osm_2019_02_12
+    FROM osm_2019_02_25
     WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
     )
 ;
@@ -206,26 +206,47 @@ FROM united_states_al2_al12
 WHERE id = 119133;
 
 
+CREATE INDEX idx_osm_2019_02_25_gist ON osm_2019_02_25 USING GIST (geom)
+;
+
+CREATE INDEX idx_osm_2019_02_25_gist_3d ON osm_2019_02_25 USING GIST (geom devv5.gist_geometry_ops_nd)
+;
+
+ANALYSE osm_2019_02_25
+;
+
+CREATE INDEX idx_bh_id on boundaries_hierarchy(id)
+;
+
+CREATE INDEX idx_bh_name on boundaries_hierarchy(name)
+;
+
+ANALYZE boundaries_hierarchy
+;
 
 
 
 --counterparts with equal geography
-CREATE TABLE counterparts (id_1 integer, id_2 integer);
+DROP TABLE counterparts
+;
+
+CREATE TABLE counterparts (id_1 integer, id_2 integer)
+;
 
 INSERT INTO counterparts
 SELECT a1.id as id_1, a2.id as id_2
 FROM boundaries_hierarchy a1
 
 JOIN boundaries_hierarchy a2
-         ON a1.country = a2.country AND a1.id != a2.id --AND (/*a1.firts_ancestor_id = a2.firts_ancestor_id OR*/ a1.firts_ancestor_id = a2.id)
+         ON a1.country = a2.country AND a1.id != a2.id
 
-JOIN osm_2019_02_15 osm1
+JOIN osm_2019_02_25 osm1
     ON a1.id = osm1.id
 
-JOIN osm_2019_02_15 osm2
+JOIN osm_2019_02_25 osm2
     ON a2.id = osm2.id
 
-WHERE osm1.geom = osm2.geom
+WHERE osm1.geom::devv5.geography = osm2.geom::devv5.geography
 ;
 
 SELECT c.id_1, c.id_2, a1.name, a1.enname, a1.locname, a1.offname, a2.name, a2.enname, a2.locname, a2.offname
@@ -300,11 +321,6 @@ FROM boundaries_hierarchy a
 JOIN boundaries_hierarchy a1
          ON a.country = a1.country AND a.id != a1.id AND (a.firts_ancestor_id = a1.firts_ancestor_id OR a.firts_ancestor_id = a1.id )
 ;
-
-CREATE INDEX idx_levenshtein_id1 on levenshtein_values(id_1);
-CREATE INDEX idx_levenshtein_id2 on levenshtein_values(id_2);
-CREATE INDEX idx_levenshtein_values on levenshtein_values(levenshtein_value);
-ANALYZE levenshtein_values;
 
 SELECT l.id_1, s1.name, l.id_2, s2.name, l.levenshtein_value
 
