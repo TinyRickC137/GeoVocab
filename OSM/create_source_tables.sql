@@ -17,6 +17,32 @@
 * Date: 2018
 **************************************************************************/
 
+DROP TABLE IF EXISTS sources.osm_2019_02_25;
+CREATE TABLE sources.osm_2019_02_25
+(
+	gid integer,
+	id integer,
+	country varchar(254),
+	name varchar(254),
+	enname varchar(254),
+	locname varchar(254),
+	offname varchar(254),
+	boundary varchar(254),
+	adminlevel integer,
+	wikidata varchar(254),
+	wikimedia varchar(254),
+	timestamp varchar(254),
+	note varchar(254),
+	rpath varchar(254),
+	iso3166_2 varchar(254),
+	geom devv5.geometry(MultiPolygon,4326)
+)
+;
+
+
+
+
+--synpuf tests
 --Creation of source tables
 --All countries
 --2019-02-03
@@ -642,26 +668,5 @@ SELECT * FROM osm_netherlands_al2_al12_2019_02_25
 SELECT * FROM osm_united_kingdom_al2_al12_2019_02_25
     UNION ALL
 SELECT * FROM osm_united_states_al2_al12_2019_02_25
-)
-;
-
-create table osm_2019_02_25
-(
-	gid integer,
-	id integer,
-	country varchar(254),
-	name varchar(254),
-	enname varchar(254),
-	locname varchar(254),
-	offname varchar(254),
-	boundary varchar(254),
-	adminlevel integer,
-	wikidata varchar(254),
-	wikimedia varchar(254),
-	timestamp varchar(254),
-	note varchar(254),
-	rpath varchar(254),
-	iso3166_2 varchar(254),
-	geom devv5.geometry(MultiPolygon,4326)
 )
 ;

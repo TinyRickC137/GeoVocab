@@ -5,6 +5,10 @@
 SELECT COUNT (*)
 FROM osm_2019_02_25;
 
+--Count of records in boundaries_hierarchy
+SELECT COUNT (*)
+FROM boundaries_hierarchy;
+
 --Absence of not-unique IDs
 SELECT id, count(*)
 FROM osm_2019_02_25
@@ -98,6 +102,18 @@ SELECT gid,
 FROM osm_2019_02_25
 WHERE id != (regexp_split_to_array(rpath, ','))[1] :: INT
 ORDER BY place_of_its_own_id;
+
+--Absence of records where id is not in rpath
+SELECT *
+
+FROM osm_2019_02_25 s
+
+LEFT JOIN osm_2019_02_25 s1
+	ON	(regexp_split_to_array(s.rpath, ','))[1] :: INT = s1.id
+
+WHERE s.rpath !~ ('(?<=(^|\,))' || s.id :: VARCHAR || '(?=\,)')
+;
+
 
 --Lower or the same admin level cannot be the parent of higher admin level
 --(EXCLUDING BROKEN HIERARCHY)
@@ -206,6 +222,8 @@ FROM united_states_al2_al12
 WHERE id = 119133;
 
 
+
+--Indexes
 CREATE INDEX idx_osm_2019_02_25_gist ON osm_2019_02_25 USING GIST (geom)
 ;
 
@@ -246,7 +264,7 @@ JOIN osm_2019_02_25 osm1
 JOIN osm_2019_02_25 osm2
     ON a2.id = osm2.id
 
-WHERE osm1.geom::devv5.geography = osm2.geom::devv5.geography
+WHERE osm1.geom :: devv5.geography = osm2.geom :: devv5.geography
 ;
 
 SELECT c.id_1, c.id_2, a1.name, a1.enname, a1.locname, a1.offname, a2.name, a2.enname, a2.locname, a2.offname
@@ -285,10 +303,10 @@ FROM boundaries_hierarchy a1
 JOIN boundaries_hierarchy a2
          ON a1.country = a2.country AND a1.id != a2.id AND a1.name = a2.name AND (a1.firts_ancestor_id = a2.firts_ancestor_id /*OR a1.firts_ancestor_id = a2.id*/) AND a1.adminlevel = a2.adminlevel
 
- JOIN osm_2019_02_15 osm1
+ JOIN osm_2019_02_25 osm1
     ON a1.id = osm1.id
 
-JOIN osm_2019_02_15 osm2
+JOIN osm_2019_02_25 osm2
     ON a2.id = osm2.id
 
 
@@ -335,34 +353,78 @@ JOIN osm_all_countries s2
 WHERE levenshtein_value = 1 AND s1.country in ('USA')
 ;
 
---there is no id in rpath
-INSERT INTO boundaries_hierarchy
-SELECT s.gid,
-	   s.id,
-	   s.country,
-	   s.name,
-	   s.enname,
-	   s.locname,
-	   s.offname,
-	   s.boundary,
-	   s.adminlevel,
-	   s.wikidata,
-	   s.wikimedia,
-	   s.timestamp,
-	   s.note,
-	   s.rpath,
-	   s.iso3166_2,
-	   CASE WHEN s.adminlevel > s1.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[1] :: INT
-			ELSE 1
-		   	END as first_ancestor_id,
-	   CASE WHEN s.adminlevel > s1.adminlevel THEN (regexp_split_to_array(s.rpath, ','))[2] :: INT
-			ELSE 1
-		   	END as second_ancestor_id
 
-FROM osm_2019_02_15 s
+SELECT *
+FROM boundaries_hierarchy
+WHERE name in ('Flygstaden')
+;
 
-LEFT JOIN osm_2019_02_15 s1
-	ON	(regexp_split_to_array(s.rpath, ','))[1] :: INT = s1.id
 
-WHERE s.rpath !~ ('(?<=(^|\,))' || s.id :: VARCHAR || '(?=\,)')
+
+SELECT min (a1.country)
+    FROM boundaries_hierarchy a1
+    JOIN boundaries_hierarchy a2
+        ON a1.country = a2.country AND a1.id != a2.id AND a1.name = a2.name AND a1.firts_ancestor_id = a2.firts_ancestor_id
+    GROUP BY a1.name
+    HAVING COUNT (*) > 2
+;
+
+
+
+--population of stages
+--202722
+SELECT COUNT (*)
+FROM boundaries_hierarchy a
+;
+
+--Just name is used
+--184622
+SELECT COUNT (*)
+FROM boundaries_hierarchy a
+WHERE (name = enname OR enname IS NULL)
+  AND (name = locname OR locname IS NULL)
+  AND (name = offname OR offname IS NULL)
+;
+
+--enname is always useless since it's equal to name if NOT NULL
+--0
+SELECT *
+FROM boundaries_hierarchy a
+WHERE (name != enname)
+;
+
+--locname
+SELECT *
+FROM boundaries_hierarchy a
+WHERE locname != name
+;
+
+
+--Hebrew language
+SELECT *
+FROM boundaries_hierarchy a
+WHERE country = 'ISR' AND locname != name
+AND locname !~* 'א‬|ב|ג|ד|ה|ו|ז|ח|ט|י|מ|נ|ם|ן|פ|צ|ף|ץ|ס|ע|ק|ר|ש|ת|ל|כ|ך'
+ORDER BY locname
+;
+
+
+--CHN parcing
+--not done yet
+SELECT id,
+       locname,
+       regexp_replace(regexp_split_to_table (locname, ' / | \('), '\)$', ''),
+	   CASE WHEN regexp_replace(regexp_split_to_table (locname, ' / | \('), '\)$', '') ~* '' THEN 'Eng'
+		   END as language
+
+FROM boundaries_hierarchy a
+WHERE locname != name
+	AND country = 'CHN'
+;
+
+--offname
+SELECT *
+FROM boundaries_hierarchy a
+WHERE   offname != name
+	AND offname != locname
 ;
