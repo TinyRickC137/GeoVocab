@@ -1,4 +1,4 @@
--- 1. Update latest_update field to new date
+-- 1 Update latest_update field to new date
 DO $_$
 BEGIN
 	PERFORM VOCABULARY_PACK.SetLatestUpdate(
@@ -9,14 +9,14 @@ BEGIN
 );
 END $_$;
 
--- 2. Truncate all working tables AND remove indices
+-- 2 Truncate all working tables AND remove indices
 TRUNCATE TABLE concept_stage;
 TRUNCATE TABLE concept_relationship_stage;
 TRUNCATE TABLE concept_synonym_stage;
 TRUNCATE TABLE pack_content_stage;
 TRUNCATE TABLE drug_strength_stage;
 
--- 3. Preliminary work
+-- 3 Preliminary work
 -- 3.1 Creation of boundaries_hierarchy temporary table
 DROP TABLE IF EXISTS boundaries_hierarchy
 ;
@@ -247,7 +247,7 @@ DELETE FROM boundaries_hierarchy
 WHERE id in (SELECT id FROM excluded_objects)
 ;
 
--- 3.4.3. Delete counterpart objects with same geography, but higher id
+-- 3.4.3 Delete counterpart objects with same geography, but higher id
 INSERT INTO excluded_objects
 SELECT *
 FROM boundaries_hierarchy
@@ -484,7 +484,7 @@ FROM boundaries_hierarchy
 WHERE firts_ancestor_id != '0'
 ;
 
--- 4.3.2. Subsumes relationship
+-- 4.3.2 Subsumes relationship
 INSERT INTO concept_relationship_stage
 SELECT NULL as concept_id_1,
        NULL as concept_id_2,
