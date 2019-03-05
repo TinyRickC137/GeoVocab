@@ -343,7 +343,7 @@ WHERE id in (
 	JOIN excluded_objects b
 	ON a.firts_ancestor_id = b.id
 	)
-	AND country != 'CAN'
+AND country != 'CAN'
 ;
 
 -- 3.5.2 Manual target updates
@@ -464,7 +464,7 @@ SELECT NULL as synonym_concept_id,
 		   ELSE 0 END as language_concept_id
 FROM boundaries_hierarchy
 WHERE   offname != name
-	AND offname != locname
+    AND offname != locname
 ;
 
 -- 4.3 Population of concept_relationship_stage
@@ -477,22 +477,6 @@ SELECT NULL as concept_id_1,
        'OSM' as vocabulary_id_1,
        'OSM' as vocabulary_id_2,
        'Is a' as relationship_id,
-       '1970-01-01' :: DATE as valid_start_date,
-       '2099-12-31' :: DATE as valid_end_date,
-       NULL as invalid_reason
-FROM boundaries_hierarchy
-WHERE firts_ancestor_id != '0'
-;
-
--- 4.3.2 Subsumes relationship
-INSERT INTO concept_relationship_stage
-SELECT NULL as concept_id_1,
-       NULL as concept_id_2,
-       firts_ancestor_id as concept_code_1,
-       id as concept_code_2,
-       'OSM' as vocabulary_id_1,
-       'OSM' as vocabulary_id_2,
-       'Subsumes' as relationship_id,
        '1970-01-01' :: DATE as valid_start_date,
        '2099-12-31' :: DATE as valid_end_date,
        NULL as invalid_reason
