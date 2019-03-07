@@ -428,3 +428,37 @@ FROM boundaries_hierarchy a
 WHERE   offname != name
 	AND offname != locname
 ;
+
+SELECT MIN (timestamp) :: date
+FROM sources.osm_2019_02_25;
+
+SELECT DISTINCT domain_id
+FROM concept_stage
+;
+
+SELECT DISTINCT concept_class_id
+FROM concept_stage
+;
+SELECT *
+FROM devv5.concept
+WHERE concept_name = 'Device'
+limit 20;
+
+select *
+from devv5.domain
+WHERE domain_id != domain_name
+;
+
+select *
+from devv5.concept_class
+WHERE concept_class_id != concept_class_name
+;
+
+select *
+from devv5.vocabulary
+
+;
+
+SELECT *
+FROM concept_relationship_manual
+LIMIT 50;
