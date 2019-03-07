@@ -1,2 +1,0 @@
-# GeoVocabs
-**Update of GeoVocabs**
