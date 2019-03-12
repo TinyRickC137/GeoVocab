@@ -9,68 +9,6 @@
 --4422604	Puerto Rico
 --286898	United States Virgin Islands
 
-
-
---Creating stage tables
-DROP TABLE IF EXISTS concept_stage;
-CREATE TABLE concept_stage
-(
-  concept_id       integer,
-  concept_name     varchar(255),
-  domain_id        varchar(20),
-  vocabulary_id    varchar(20),
-  concept_class_id varchar(20),
-  standard_concept varchar(1),
-  concept_code     varchar(50),
-  valid_start_date date,
-  valid_end_date   date,
-  invalid_reason   varchar(1)
-);
-
-DROP TABLE IF EXISTS concept_relationship_stage;
-CREATE TABLE concept_relationship_stage
-(
-  concept_id_1     integer,
-  concept_id_2     integer,
-  concept_code_1   varchar(50) not null,
-  concept_code_2   varchar(50) not null,
-  vocabulary_id_1  varchar(20) not null,
-  vocabulary_id_2  varchar(20) not null,
-  relationship_id  varchar(20) not null,
-  valid_start_date date        not null,
-  valid_end_date   date        not null,
-  invalid_reason   varchar(1)
-);
-
---Creating source tables
-DROP TABLE IF EXISTS cb_us_division_500k;
-CREATE TABLE cb_us_division_500k
-(
-	gid int,
-	divisionce varchar(1),
-	affgeoid varchar(10),
-	geoid varchar(1),
-	name varchar(100),
-	lsad varchar(2),
-	aland double precision,
-	awater double precision,
-	geom geometry(MultiPolygon,4326)
-);
-
-DROP TABLE IF EXISTS cb_us_region_500k;
-CREATE TABLE cb_us_region_500k
-(
-	gid int,
-	regionce varchar(1),
-	affgeoid varchar(10),
-	geoid varchar(1),
-	name varchar(100),
-	lsad varchar(2),
-	aland double precision,
-	awater double precision,
-	geom geometry(MultiPolygon,4326)
-);
-
 --Add region indicator to divisions
 ALTER TABLE cb_2017_us_division_500k
     ADD COLUMN region varchar(50);
@@ -117,8 +55,6 @@ SELECT NULL as concept_id,
 	   TO_DATE('20991231','yyyymmdd') as valid_end_date,
        null as invalid_reason
 FROM cb_us_division_500k;
-
-
 
 
 
