@@ -43,30 +43,32 @@ CREATE TABLE concept_relationship_stage
 );
 
 --Creating source tables
-CREATE TABLE cb_2017_us_division_500k
+DROP TABLE IF EXISTS cb_us_division_500k;
+CREATE TABLE cb_us_division_500k
 (
-  gid        integer,
-  divisionce varchar(1),
-  affgeoid   varchar(10),
-  geoid      varchar(1),
-  name       varchar(100),
-  lsad       varchar(2),
-  aland      double precision,
-  awater     double precision,
-  geom       geometry(MultiPolygon, 4326)
+	gid int,
+	divisionce varchar(1),
+	affgeoid varchar(10),
+	geoid varchar(1),
+	name varchar(100),
+	lsad varchar(2),
+	aland double precision,
+	awater double precision,
+	geom geometry(MultiPolygon,4326)
 );
 
-CREATE TABLE cb_2017_us_region_500k
+DROP TABLE IF EXISTS cb_us_region_500k;
+CREATE TABLE cb_us_region_500k
 (
-  gid      integer,
-  regionce varchar(1),
-  affgeoid varchar(10),
-  geoid    varchar(1),
-  name     varchar(100),
-  lsad     varchar(2),
-  aland    double precision,
-  awater   double precision,
-  geom     geometry(MultiPolygon, 4326)
+	gid int,
+	regionce varchar(1),
+	affgeoid varchar(10),
+	geoid varchar(1),
+	name varchar(100),
+	lsad varchar(2),
+	aland double precision,
+	awater double precision,
+	geom geometry(MultiPolygon,4326)
 );
 
 --Add region indicator to divisions
@@ -86,35 +88,49 @@ UPDATE cb_2017_us_division_500k di
 SET region = '0200000US4'
     WHERE name in ('Mountain', 'Pacific');
 
---Populating concept_stage
---Census regions
+-- Population of stages
+-- Population of concept_stage
+-- US Census regions
 INSERT INTO concept_stage
 SELECT NULL as concept_id,
-       CONCAT(re.name, ' region') as concept_name,
+       name as concept_name,
        'Geography' as domain_id,
        'US Census' as vocabulary_id,
-       'US Region' as concept_class_id,
+       'US Census Region' as concept_class_id,
        'S' as standard_concept,
        affgeoid as concept_code,
-       CAST('1970-01-01' AS DATE) as valid_start_date,
-       CAST('2099-12-31' AS DATE) as valid_end_date,
+	   TO_DATE('19700101','yyyymmdd') as valid_start_date,
+	   TO_DATE('20991231','yyyymmdd') as valid_end_date,
        null as invalid_reason
-FROM cb_2017_us_region_500k re;
+FROM cb_us_region_500k;
 
---Populating concept_stage
---Census divisions
+-- US Census divisions
 INSERT INTO concept_stage
 SELECT NULL as concept_id,
-       di.name as concept_name,
+       name as concept_name,
        'Geography' as domain_id,
        'US Census' as vocabulary_id,
-       'Division' as concept_class_id,
+       'US Census Division' as concept_class_id,
        'S' as standard_concept,
        affgeoid as concept_code,
-       CAST('1970-01-01' AS DATE) as valid_start_date,
-       CAST('2099-12-31' AS DATE) as valid_end_date,
+	   TO_DATE('19700101','yyyymmdd') as valid_start_date,
+	   TO_DATE('20991231','yyyymmdd') as valid_end_date,
        null as invalid_reason
-FROM cb_2017_us_division_500k di;
+FROM cb_us_division_500k;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 --Populating relationship_stage
 --United States -> regions
