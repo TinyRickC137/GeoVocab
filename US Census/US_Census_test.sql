@@ -197,3 +197,59 @@ FROM concept_stage_CENSUS cs
 
 --TESTS--
 Select count(concept_id), count(distinct concept_id) from concept_stage_CENSUS;
+
+
+
+
+
+--2010, 2017 comparision
+--Region
+SELECT a.name, b.name, (st_area(b.geom::geography) / st_area(a.geom::geography) * 100) - 100
+FROM cb_2017_us_region_500k a
+
+JOIN gz_2010_us_020_00_500k b
+    ON a.name=b.name;
+
+
+--Division
+SELECT a.name, b.name, (st_area(b.geom::geography) / st_area(a.geom::geography) * 100) - 100
+FROM cb_2017_us_division_500k a
+
+JOIN gz_2010_us_030_00_500k b
+    ON a.name=b.name;
+
+
+SELECT *
+FROM cb_2017_us_region_500k;
+
+
+SELECT *
+FROM cb_2017_us_division_500k;
+
+
+SELECT *
+FROM cb_2017_us_region_500k
+
+INTERSECT
+
+SELECT *
+FROM sources.cb_us_region_500k;
+
+
+
+SELECT *
+FROM cb_2017_us_division_500k
+
+INTERSECT
+
+SELECT *
+FROM sources.cb_us_division_500k;
+
+
+SELECT *
+FROM sources.cb_us_region_500k
+
+UNION ALL
+
+SELECT *
+FROM sources.cb_us_division_500k;

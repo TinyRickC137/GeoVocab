@@ -1,3 +1,14 @@
+--US CENSUS
+--Some states or their equivalents were NOT included in US Census regions and divisions
+--according to 2017 US Census bureau information
+
+--List of excluded concepts with concept_codes (all of them are direct children of USA)
+--2177187	American Samoa
+--306001	Guam
+--306004	Northern Mariana Islands
+--4422604	Puerto Rico
+--286898	United States Virgin Islands
+
 --All States and equivalents not covered by regions and divisions
 --(They shouldn't)
 SELECT cr.concept_code_1, cs.concept_code, cs.concept_name, cs.concept_class_id FROM concept_relationship_stage cr
